@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ตัวสร้างใบเสร็จ</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tabletop@1.6.1/tabletop.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
     <style>
@@ -184,11 +185,27 @@
             row.parentNode.removeChild(row);
         }
 
+        // Fetch Google Sheet data
+        function fetchGoogleSheetData() {
+            return new Promise((resolve, reject) => {
+                Tabletop.init({
+                    key: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTnN8rh7ph-tin4JHDhL9qdoivNArJTjpWBcdYMwQUP41smPOL172MJ8WSTDt3Q-USbhCgE1zNYDVu-/pub?gid=0&single=true&output=csv',  // Replace with your Google Sheet URL
+                    simpleSheet: true,
+                    callback: function(data) {
+                        resolve(data);
+                    },
+                    error: function(err) {
+                        reject(err);
+                    }
+                });
+            });
+        }
+
         // Generate and download the receipt as PDF with Thai font
-        function generateReceipt() {
+        async function generateReceipt() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
+
             // Load Thai font (e.g., TH Sarabun) - Replace with your base64 font data
             const THSarabunBase64 = 'AAEAAA...'; // Paste your base64 string here
             doc.addFileToVFS("THSarabun.ttf", THSarabunBase64);
@@ -220,37 +237,30 @@
             // Get product details from table
             const rows = document.getElementById('productTable').rows;
             for (let i = 1; i < rows.length; i++) {
-                const cells = rows[i].cells;
-                const productName = cells[0].querySelector('select').value;
-                const productType = cells[1].querySelector('select').value;
-                const quantity = parseFloat(cells[2].querySelector('input').value);
-                const price = parseFloat(cells[3].querySelector('input').value);
-                
-                const lineTotal = quantity * price;
-                totalAmount += lineTotal;
-                
+                const row = rows[i];
+                const productName = row.querySelector('.productName').value;
+                const productType = row.querySelector('.productType').value;
+                const quantity = row.querySelector('.quantity').value;
+                const price = row.querySelector('.price').value;
+
+                const amount = quantity * price;
+                totalAmount += amount;
+
                 doc.text(productName, 10, yOffset);
                 doc.text(productType, 60, yOffset);
-                doc.text(quantity.toString(), 120, yOffset);
-                doc.text(price.toFixed(2), 160, yOffset);
+                doc.text(quantity, 120, yOffset);
+                doc.text(price, 160, yOffset);
                 yOffset += 10;
             }
-            
-            const vat = totalAmount * 0.07;
-            const grandTotal = totalAmount + vat;
-            
-            doc.text(`ยอดรวม: ${totalAmount.toFixed(2)}`, 10, yOffset);
-            yOffset += 10;
-            doc.text(`ภาษีมูลค่าเพิ่ม (7%): ${vat.toFixed(2)}`, 10, yOffset);
-            yOffset += 10;
-            doc.text(`รวมทั้งหมด: ${grandTotal.toFixed(2)}`, 10, yOffset);
 
-            doc.save(`${receiptId}_ใบเสร็จ.pdf`);
+            // Add total
+            doc.text(`ยอดรวม: ${totalAmount} บาท`, 10, yOffset);
+
+            // Save the document
+            doc.save(`receipt_${receiptId}.pdf`);
         }
 
-        // Fetch product data when the page loads
-        window.onload = fetchProductData;
+        fetchProductData();
     </script>
-
 </body>
 </html>
