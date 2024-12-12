@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receipt Generator</title>
+    <title>ตัวสร้างใบเสร็จ</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -74,37 +74,37 @@
 <body>
 
     <div>
-        <h1>Receipt Generator</h1>
+        <h1>ตัวสร้างใบเสร็จ</h1>
 
         <div class="form-section">
-            <label for="receiptId">Receipt ID:</label>
-            <input type="text" id="receiptId" placeholder="Enter receipt ID">
+            <label for="receiptId">หมายเลขใบเสร็จ:</label>
+            <input type="text" id="receiptId" placeholder="กรอกหมายเลขใบเสร็จ">
 
-            <label for="name">Customer Name:</label>
-            <input type="text" id="name" placeholder="Enter customer name">
+            <label for="name">ชื่อลูกค้า:</label>
+            <input type="text" id="name" placeholder="กรอกชื่อลูกค้า">
 
-            <label for="address">Address:</label>
-            <textarea id="address" placeholder="Enter address"></textarea>
+            <label for="address">ที่อยู่:</label>
+            <textarea id="address" placeholder="กรอกที่อยู่"></textarea>
 
-            <label for="date">Date:</label>
+            <label for="date">วันที่:</label>
             <input type="date" id="date">
         </div>
 
         <div class="form-section">
-            <h3>Product Details</h3>
+            <h3>รายละเอียดสินค้า</h3>
             <table id="productTable">
                 <tr>
-                    <th>Product Name</th>
-                    <th>Product Type</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Action</th>
+                    <th>ชื่อสินค้า</th>
+                    <th>ประเภทสินค้า</th>
+                    <th>จำนวน</th>
+                    <th>ราคา</th>
+                    <th>ดำเนินการ</th>
                 </tr>
             </table>
-            <button onclick="addProductRow()">Add Product</button>
+            <button onclick="addProductRow()">เพิ่มสินค้า</button>
         </div>
 
-        <button id="generateReceiptBtn" onclick="generateReceipt()">Generate Receipt</button>
+        <button id="generateReceiptBtn" onclick="generateReceipt()">สร้างใบเสร็จ</button>
     </div>
 
     <script>
@@ -134,9 +134,9 @@
                 row.innerHTML = `
                     <td><select class="productName">${generateProductOptions()}</select></td>
                     <td><select class="productType">${generateProductTypeOptions(product.productName)}</select></td>
-                    <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
-                    <td><input type="number" class="price" placeholder="Enter price"></td>
-                    <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
+                    <td><input type="number" class="quantity" placeholder="กรอกจำนวน"></td>
+                    <td><input type="number" class="price" placeholder="กรอกราคา"></td>
+                    <td><button type="button" onclick="removeProductRow(this)">ลบ</button></td>
                 `;
             });
         }
@@ -161,9 +161,9 @@
             newRow.innerHTML = `
                 <td><select class="productName">${generateProductOptions()}</select></td>
                 <td><select class="productType"></select></td>
-                <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
-                <td><input type="number" class="price" placeholder="Enter price"></td>
-                <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
+                <td><input type="number" class="quantity" placeholder="กรอกจำนวน"></td>
+                <td><input type="number" class="price" placeholder="กรอกราคา"></td>
+                <td><button type="button" onclick="removeProductRow(this)">ลบ</button></td>
             `;
             const productNameSelect = newRow.querySelector('.productName');
             productNameSelect.addEventListener('change', (event) => updateProductTypeOptions(event.target));
@@ -194,18 +194,18 @@
             
             // Add header info
             doc.setFontSize(16);
-            doc.text('Receipt', 105, 20, null, null, 'center');
+            doc.text('ใบเสร็จ', 105, 20, null, null, 'center');
             doc.setFontSize(12);
-            doc.text(`Receipt ID: ${receiptId}`, 10, 30);
-            doc.text(`Date: ${date}`, 10, 35);
-            doc.text(`Customer: ${name}`, 10, 40);
-            doc.text(`Address: ${address}`, 10, 45);
+            doc.text(`หมายเลขใบเสร็จ: ${receiptId}`, 10, 30);
+            doc.text(`วันที่: ${date}`, 10, 35);
+            doc.text(`ลูกค้า: ${name}`, 10, 40);
+            doc.text(`ที่อยู่: ${address}`, 10, 45);
 
             // Table headers
-            doc.text('Product Name', 10, 55);
-            doc.text('Product Type', 60, 55);
-            doc.text('Quantity', 120, 55);
-            doc.text('Price', 160, 55);
+            doc.text('ชื่อสินค้า', 10, 55);
+            doc.text('ประเภทสินค้า', 60, 55);
+            doc.text('จำนวน', 120, 55);
+            doc.text('ราคา', 160, 55);
             
             let yOffset = 60;
             let totalAmount = 0;
@@ -232,13 +232,13 @@
             const vat = totalAmount * 0.07;
             const grandTotal = totalAmount + vat;
             
-            doc.text(`Subtotal: ${totalAmount.toFixed(2)}`, 10, yOffset);
+            doc.text(`ยอดรวม: ${totalAmount.toFixed(2)}`, 10, yOffset);
             yOffset += 10;
-            doc.text(`VAT (7%): ${vat.toFixed(2)}`, 10, yOffset);
+            doc.text(`ภาษีมูลค่าเพิ่ม (7%): ${vat.toFixed(2)}`, 10, yOffset);
             yOffset += 10;
-            doc.text(`Total: ${grandTotal.toFixed(2)}`, 10, yOffset);
+            doc.text(`รวมทั้งหมด: ${grandTotal.toFixed(2)}`, 10, yOffset);
 
-            doc.save(`${receiptId}_receipt.pdf`);
+            doc.save(`${receiptId}_ใบเสร็จ.pdf`);
         }
 
         // Fetch product data when the page loads
