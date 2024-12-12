@@ -49,7 +49,7 @@
 
         // Fetch product data from Google Sheets CSV
         function fetchProductData() {
-            const sheetUrl = 'https://docs.google.com/spreadsheets/d/1y2eIzK2P2ZgGTPsRsiX7o_W6QLlRIV2VBYwWTVd3_Pk/edit?gid=0#gid=0'; // Replace with your sheet URL
+            const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/1y2eIzK2P2ZgGTPsRsiX7o_W6QLlRIV2VBYwWTVd3_Pk/pub?output=csv'; // Replace with your sheet URL
             fetch(sheetUrl)
                 .then(response => response.text())
                 .then(data => {
