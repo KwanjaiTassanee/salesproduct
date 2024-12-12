@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ตัวสร้างใบเสร็จ</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -182,11 +184,15 @@
             row.parentNode.removeChild(row);
         }
 
-        // Generate and download the receipt as PDF
+        // Generate and download the receipt as PDF with Thai font
         function generateReceipt() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
+            // Load Thai font (e.g., TH Sarabun)
+            doc.addFileToVFS("THSarabun.ttf", "base64 font data here");  // Replace with your base64 font data
+            doc.setFont("THSarabun");
+
             const receiptId = document.getElementById('receiptId').value;
             const name = document.getElementById('name').value;
             const address = document.getElementById('address').value;
