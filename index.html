@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Receipt Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -109,25 +108,23 @@
     </div>
 
     <script>
-        const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTnN8rh7ph-tin4JHDhL9qdoivNArJTjpWBcdYMwQUP41smPOL172MJ8WSTDt3Q-USbhCgE1zNYDVu-/pub?gid=0&single=true&output=csv';
-
         let productData = [];  // Store products fetched from Google Sheet
 
         // Fetch product data from Google Sheets CSV
-        async function fetchProductData() {
-            const response = await fetch(sheetUrl);
-            const csvText = await response.text();
-
-            // Parse the CSV data using PapaParse
-            Papa.parse(csvText, {
-                complete: (results) => {
-                    productData = results.data.slice(1).map(row => ({
-                        productName: row[0],
-                        productType: row[1],
-                    }));
+        function fetchProductData() {
+            const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTnN8rh7ph-tin4JHDhL9qdoivNArJTjpWBcdYMwQUP41smPOL172MJ8WSTDt3Q-USbhCgE1zNYDVu-/pub?gid=0&single=true&output=csv'; // Replace with your sheet URL
+            fetch(sheetUrl)
+                .then(response => response.text())
+                .then(data => {
+                    const rows = data.split('\n');
+                    rows.shift(); // Remove header row
+                    productData = rows.map(row => {
+                        const [productName, productType] = row.split(',');
+                        return { productName, productType };
+                    });
                     populateProductTable();
-                }
-            });
+                    loadCustomFont(rows[0].split(',')[0]); // Load the base64 font
+                });
         }
 
         // Populate the product table with dropdowns
@@ -186,43 +183,41 @@
             row.parentNode.removeChild(row);
         }
 
-        // Generate and download the receipt as PDF
-        async function generateReceipt() {
+        // Load custom font (THSarabun) into jsPDF
+        function loadCustomFont(fontBase64) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-
-            // Fetch CSV data from Google Sheets
-            const response = await fetch(sheetUrl);
-            const csvText = await response.text();
-
-            // Parse the CSV data (you can also use PapaParse for easier handling)
-            const rows = csvText.split('\n');
-            const base64String = rows[0].split(',')[0]; // Assuming the base64 string is in the first cell of the first row
-
-            // Load Thai font (e.g., TH Sarabun) from base64 string in the CSV
-            doc.addFileToVFS("THSarabun.ttf", base64String);
+            doc.addFileToVFS("THSarabun.ttf", fontBase64);
             doc.setFont("THSarabun");
+            doc.text("Custom font loaded", 10, 20);
+        }
 
-            // Add content to the PDF (use your form inputs here)
+        // Generate and download the receipt as PDF
+        function generateReceipt() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
             const receiptId = document.getElementById('receiptId').value;
             const name = document.getElementById('name').value;
             const address = document.getElementById('address').value;
             const date = document.getElementById('date').value;
-
-            // Add the receipt content
-            doc.text("ใบเสร็จรับเงิน", 20, 20); // "Receipt" in Thai
-            doc.text("รหัสใบเสร็จ: " + receiptId, 20, 30); // "Receipt ID"
-            doc.text("ชื่อลูกค้า: " + name, 20, 40); // "Customer Name"
-            doc.text("ที่อยู่: " + address, 20, 50); // "Address"
-            doc.text("วันที่: " + date, 20, 60); // "Date"
+            
+            // Add header info
+            doc.setFontSize(16);
+            doc.text('Receipt', 105, 20, null, null, 'center');
+            doc.setFontSize(12);
+            doc.text(`Receipt ID: ${receiptId}`, 10, 30);
+            doc.text(`Date: ${date}`, 10, 35);
+            doc.text(`Customer: ${name}`, 10, 40);
+            doc.text(`Address: ${address}`, 10, 45);
 
             // Table headers
-            doc.text('Product Name', 20, 70);
-            doc.text('Product Type', 60, 70);
-            doc.text('Quantity', 100, 70);
-            doc.text('Price', 140, 70);
-
-            let yOffset = 80;
+            doc.text('Product Name', 10, 55);
+            doc.text('Product Type', 60, 55);
+            doc.text('Quantity', 120, 55);
+            doc.text('Price', 160, 55);
+            
+            let yOffset = 60;
             let totalAmount = 0;
 
             // Get product details from table
@@ -236,22 +231,22 @@
                 
                 const lineTotal = quantity * price;
                 totalAmount += lineTotal;
-
-                doc.text(productName, 20, yOffset);
+                
+                doc.text(productName, 10, yOffset);
                 doc.text(productType, 60, yOffset);
-                doc.text(quantity.toString(), 100, yOffset);
-                doc.text(price.toFixed(2), 140, yOffset);
+                doc.text(quantity.toString(), 120, yOffset);
+                doc.text(price.toFixed(2), 160, yOffset);
                 yOffset += 10;
             }
-
+            
             const vat = totalAmount * 0.07;
             const grandTotal = totalAmount + vat;
-
-            doc.text(`Subtotal: ${totalAmount.toFixed(2)}`, 20, yOffset);
+            
+            doc.text(`Subtotal: ${totalAmount.toFixed(2)}`, 10, yOffset);
             yOffset += 10;
-            doc.text(`VAT (7%): ${vat.toFixed(2)}`, 20, yOffset);
+            doc.text(`VAT (7%): ${vat.toFixed(2)}`, 10, yOffset);
             yOffset += 10;
-            doc.text(`Total: ${grandTotal.toFixed(2)}`, 20, yOffset);
+            doc.text(`Total: ${grandTotal.toFixed(2)}`, 10, yOffset);
 
             doc.save(`${receiptId}_receipt.pdf`);
         }
