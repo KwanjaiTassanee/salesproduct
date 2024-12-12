@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Add your styles here */
+    </style>
+</head>
+<body>
+
+    <h1>Receipt Generator</h1>
+
+    <div class="form-section">
+        <label for="receiptId">Receipt ID:</label>
+        <input type="text" id="receiptId" placeholder="Enter receipt ID">
+
+        <label for="name">Customer Name:</label>
+        <input type="text" id="name" placeholder="Enter customer name">
+
+        <label for="address">Address:</label>
+        <textarea id="address" placeholder="Enter address"></textarea>
+
+        <label for="date">Date:</label>
+        <input type="date" id="date">
+    </div>
+
+    <div class="form-section">
+        <h3>Product Details</h3>
+        <table id="productTable">
+            <tr>
+                <th>Product Name</th>
+                <th>Product Type</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Action</th>
+            </tr>
+            <!-- Product rows will be inserted here -->
+        </table>
+        <button onclick="addProductRow()">Add Product</button>
+    </div>
+
+    <button id="generateReceiptBtn" onclick="generateReceipt()">Generate Receipt</button>
+
+    <script>
+        let productData = [];  // Store products fetched from Google Sheet
+
+        // Fetch product data from Google Sheets CSV
+        function fetchProductData() {
+            const sheetUrl = 'https://docs.google.com/spreadsheets/d/1y2eIzK2P2ZgGTPsRsiX7o_W6QLlRIV2VBYwWTVd3_Pk/edit?gid=0#gid=0'; // Replace with your sheet URL
+            fetch(sheetUrl)
+                .then(response => response.text())
+                .then(data => {
+                    const rows = data.split('\n');
+                    rows.shift(); // Remove header row
+                    productData = rows.map(row => {
+                        const [productName, productType] = row.split(',');
+                        return { productName, productType };
+                    });
+                    populateProductTable();
+                });
+        }
+
+        // Populate the product table with the data from the Google Sheet
+        function populateProductTable() {
+            const productTable = document.getElementById('productTable');
+            productData.forEach(product => {
+                const row = productTable.insertRow();
+                row.innerHTML = `
+                    <td><input type="text" class="productName" value="${product.productName}" readonly></td>
+                    <td><input type="text" class="productType" value="${product.productType}" readonly></td>
+                    <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
+                    <td><input type="number" class="price" placeholder="Enter price"></td>
+                    <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
+                `;
+            });
+        }
+
+        // Add a new product row to the table
+        function addProductRow() {
+            const table = document.getElementById('productTable');
+            const newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" class="productName" placeholder="Enter product name"></td>
+                <td><input type="text" class="productType" placeholder="Enter product type"></td>
+                <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
+                <td><input type="number" class="price" placeholder="Enter price"></td>
+                <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
+            `;
+        }
+
+        // Remove a product row from the table
+        function removeProductRow(button) {
+            const row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+
+        // Generate and download the receipt as PDF
+        function generateReceipt() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const receiptId = document.getElementById('receiptId').value;
+            const name = document.getElementById('name').value;
+            const address = document.getElementById('address').value;
+            const date = document.getElementById('date').value;
+            
+            // Add header info
+            doc.setFontSize(16);
+            doc.text('Receipt', 105, 20, null, null, 'center');
+            doc.setFontSize(12);
+            doc.text(`Receipt ID: ${receiptId}`, 10, 30);
+            doc.text(`Date: ${date}`, 10, 35);
+            doc.text(`Customer: ${name}`, 10, 40);
+            doc.text(`Address: ${address}`, 10, 45);
+
+            // Table headers
+            doc.text('Product Name', 10, 55);
+            doc.text('Product Type', 60, 55);
+            doc.text('Quantity', 120, 55);
+            doc.text('Price', 160, 55);
+            
+            let yOffset = 60;
+            let totalAmount = 0;
+
+            // Get product details from table
+            const rows = document.getElementById('productTable').rows;
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].cells;
+                const productName = cells[0].querySelector('input').value;
+                const productType = cells[1].querySelector('input').value;
+                const quantity = parseFloat(cells[2].querySelector('input').value);
+                const price = parseFloat(cells[3].querySelector('input').value);
+                
+                const lineTotal = quantity * price;
+                totalAmount += lineTotal;
+                
+                doc.text(productName, 10, yOffset);
+                doc.text(productType, 60, yOffset);
+                doc.text(quantity.toString(), 120, yOffset);
+                doc.text(price.toFixed(2), 160, yOffset);
+                yOffset += 10;
+            }
+            
+            const vat = totalAmount * 0.07;
+            const grandTotal = totalAmount + vat;
+            
+            doc.text(`Subtotal: ${totalAmount.toFixed(2)}`, 10, yOffset);
+            yOffset += 10;
+            doc.text(`VAT (7%): ${vat.toFixed(2)}`, 10, yOffset);
+            yOffset += 10;
+            doc.text(`Total: ${grandTotal.toFixed(2)}`, 10, yOffset);
+
+            doc.save(`${receiptId}_receipt.pdf`);
+        }
+
+        // Fetch product data when the page loads
+        window.onload = fetchProductData;
+    </script>
+
+</body>
+</html>
