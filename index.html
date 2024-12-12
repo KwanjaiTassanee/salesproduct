@@ -108,8 +108,141 @@
     </div>
 
     <script>
-        // Your existing JavaScript logic here
-        // Ensure jsPDF is using the correct Thai font as described earlier
+        let productData = [];  // Store products fetched from Google Sheet
+
+        // Fetch product data from Google Sheets CSV
+        function fetchProductData() {
+            const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTnN8rh7ph-tin4JHDhL9qdoivNArJTjpWBcdYMwQUP41smPOL172MJ8WSTDt3Q-USbhCgE1zNYDVu-/pub?gid=0&single=true&output=csv'; // Replace with your sheet URL
+            fetch(sheetUrl)
+                .then(response => response.text())
+                .then(data => {
+                    const rows = data.split('\n');
+                    rows.shift(); // Remove header row
+                    productData = rows.map(row => {
+                        const [productName, productType] = row.split(',');
+                        return { productName, productType };
+                    });
+                    populateProductTable();
+                });
+        }
+
+        // Populate the product table with dropdowns
+        function populateProductTable() {
+            const productTable = document.getElementById('productTable');
+            productData.forEach(product => {
+                const row = productTable.insertRow();
+                row.innerHTML = `
+                    <td><select class="productName">${generateProductOptions()}</select></td>
+                    <td><select class="productType">${generateProductTypeOptions(product.productName)}</select></td>
+                    <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
+                    <td><input type="number" class="price" placeholder="Enter price"></td>
+                    <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
+                `;
+            });
+        }
+
+        // Generate product options for the product name dropdown
+        function generateProductOptions() {
+            return productData.map(product => `<option value="${product.productName}">${product.productName}</option>`).join('');
+        }
+
+        // Generate product type options based on selected product name
+        function generateProductTypeOptions(productName) {
+            return productData
+                .filter(product => product.productName === productName)
+                .map(product => `<option value="${product.productType}">${product.productType}</option>`)
+                .join('');
+        }
+
+        // Add a new product row to the table
+        function addProductRow() {
+            const table = document.getElementById('productTable');
+            const newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td><select class="productName">${generateProductOptions()}</select></td>
+                <td><select class="productType"></select></td>
+                <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
+                <td><input type="number" class="price" placeholder="Enter price"></td>
+                <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
+            `;
+            const productNameSelect = newRow.querySelector('.productName');
+            productNameSelect.addEventListener('change', (event) => updateProductTypeOptions(event.target));
+        }
+
+        // Update product type options when product name is selected
+        function updateProductTypeOptions(selectElement) {
+            const selectedProductName = selectElement.value;
+            const productTypeSelect = selectElement.parentNode.parentNode.querySelector('.productType');
+            productTypeSelect.innerHTML = generateProductTypeOptions(selectedProductName);
+        }
+
+        // Remove a product row from the table
+        function removeProductRow(button) {
+            const row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+
+        // Generate and download the receipt as PDF
+        function generateReceipt() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const receiptId = document.getElementById('receiptId').value;
+            const name = document.getElementById('name').value;
+            const address = document.getElementById('address').value;
+            const date = document.getElementById('date').value;
+            
+            // Add header info
+            doc.setFontSize(16);
+            doc.text('Receipt', 105, 20, null, null, 'center');
+            doc.setFontSize(12);
+            doc.text(`Receipt ID: ${receiptId}`, 10, 30);
+            doc.text(`Date: ${date}`, 10, 35);
+            doc.text(`Customer: ${name}`, 10, 40);
+            doc.text(`Address: ${address}`, 10, 45);
+
+            // Table headers
+            doc.text('Product Name', 10, 55);
+            doc.text('Product Type', 60, 55);
+            doc.text('Quantity', 120, 55);
+            doc.text('Price', 160, 55);
+            
+            let yOffset = 60;
+            let totalAmount = 0;
+
+            // Get product details from table
+            const rows = document.getElementById('productTable').rows;
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].cells;
+                const productName = cells[0].querySelector('select').value;
+                const productType = cells[1].querySelector('select').value;
+                const quantity = parseFloat(cells[2].querySelector('input').value);
+                const price = parseFloat(cells[3].querySelector('input').value);
+                
+                const lineTotal = quantity * price;
+                totalAmount += lineTotal;
+                
+                doc.text(productName, 10, yOffset);
+                doc.text(productType, 60, yOffset);
+                doc.text(quantity.toString(), 120, yOffset);
+                doc.text(price.toFixed(2), 160, yOffset);
+                yOffset += 10;
+            }
+            
+            const vat = totalAmount * 0.07;
+            const grandTotal = totalAmount + vat;
+            
+            doc.text(`Subtotal: ${totalAmount.toFixed(2)}`, 10, yOffset);
+            yOffset += 10;
+            doc.text(`VAT (7%): ${vat.toFixed(2)}`, 10, yOffset);
+            yOffset += 10;
+            doc.text(`Total: ${grandTotal.toFixed(2)}`, 10, yOffset);
+
+            doc.save(`${receiptId}_receipt.pdf`);
+        }
+
+        // Fetch product data when the page loads
+        window.onload = fetchProductData;
     </script>
 
 </body>
