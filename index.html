@@ -203,13 +203,20 @@
 
         // Generate and download the receipt as PDF with Thai font
         async function generateReceipt() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-            // Load Thai font (e.g., TH Sarabun) - Replace with your base64 font data
-            const THSarabunBase64 = 'AAEAAA...'; // Paste your base64 string here
-            doc.addFileToVFS("THSarabun.ttf", THSarabunBase64);
-            doc.setFont("THSarabun");
+    // Fetch CSV data from Google Sheets
+    const response = await fetch(sheetUrl);
+    const csvText = await response.text();
+
+    // Parse the CSV data (you can also use PapaParse for easier handling)
+    const rows = csvText.split('\n');
+    const base64String = rows[0].split(',')[0]; // Assuming the base64 string is in the first cell of the first row
+
+    // Load Thai font (e.g., TH Sarabun) from base64 string in the CSV
+    doc.addFileToVFS("THSarabun.ttf", base64String);
+    doc.setFont("THSarabun");
 
             const receiptId = document.getElementById('receiptId').value;
             const name = document.getElementById('name').value;
