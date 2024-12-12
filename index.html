@@ -1,15 +1,14 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ตัวสร้างใบเสร็จ</title>
+    <title>Receipt Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tabletop@1.6.1/tabletop.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -76,56 +75,59 @@
 <body>
 
     <div>
-        <h1>ตัวสร้างใบเสร็จ</h1>
+        <h1>Receipt Generator</h1>
 
         <div class="form-section">
-            <label for="receiptId">หมายเลขใบเสร็จ:</label>
-            <input type="text" id="receiptId" placeholder="กรอกหมายเลขใบเสร็จ">
+            <label for="receiptId">Receipt ID:</label>
+            <input type="text" id="receiptId" placeholder="Enter receipt ID">
 
-            <label for="name">ชื่อลูกค้า:</label>
-            <input type="text" id="name" placeholder="กรอกชื่อลูกค้า">
+            <label for="name">Customer Name:</label>
+            <input type="text" id="name" placeholder="Enter customer name">
 
-            <label for="address">ที่อยู่:</label>
-            <textarea id="address" placeholder="กรอกที่อยู่"></textarea>
+            <label for="address">Address:</label>
+            <textarea id="address" placeholder="Enter address"></textarea>
 
-            <label for="date">วันที่:</label>
+            <label for="date">Date:</label>
             <input type="date" id="date">
         </div>
 
         <div class="form-section">
-            <h3>รายละเอียดสินค้า</h3>
+            <h3>Product Details</h3>
             <table id="productTable">
                 <tr>
-                    <th>ชื่อสินค้า</th>
-                    <th>ประเภทสินค้า</th>
-                    <th>จำนวน</th>
-                    <th>ราคา</th>
-                    <th>ดำเนินการ</th>
+                    <th>Product Name</th>
+                    <th>Product Type</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Action</th>
                 </tr>
             </table>
-            <button onclick="addProductRow()">เพิ่มสินค้า</button>
+            <button onclick="addProductRow()">Add Product</button>
         </div>
 
-        <button id="generateReceiptBtn" onclick="generateReceipt()">สร้างใบเสร็จ</button>
+        <button id="generateReceiptBtn" onclick="generateReceipt()">Generate Receipt</button>
     </div>
 
     <script>
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTnN8rh7ph-tin4JHDhL9qdoivNArJTjpWBcdYMwQUP41smPOL172MJ8WSTDt3Q-USbhCgE1zNYDVu-/pub?gid=0&single=true&output=csv';
+
         let productData = [];  // Store products fetched from Google Sheet
 
         // Fetch product data from Google Sheets CSV
-        function fetchProductData() {
-            const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTnN8rh7ph-tin4JHDhL9qdoivNArJTjpWBcdYMwQUP41smPOL172MJ8WSTDt3Q-USbhCgE1zNYDVu-/pub?gid=0&single=true&output=csv'; // Replace with your sheet URL
-            fetch(sheetUrl)
-                .then(response => response.text())
-                .then(data => {
-                    const rows = data.split('\n');
-                    rows.shift(); // Remove header row
-                    productData = rows.map(row => {
-                        const [productName, productType] = row.split(',');
-                        return { productName, productType };
-                    });
+        async function fetchProductData() {
+            const response = await fetch(sheetUrl);
+            const csvText = await response.text();
+
+            // Parse the CSV data using PapaParse
+            Papa.parse(csvText, {
+                complete: (results) => {
+                    productData = results.data.slice(1).map(row => ({
+                        productName: row[0],
+                        productType: row[1],
+                    }));
                     populateProductTable();
-                });
+                }
+            });
         }
 
         // Populate the product table with dropdowns
@@ -136,9 +138,9 @@
                 row.innerHTML = `
                     <td><select class="productName">${generateProductOptions()}</select></td>
                     <td><select class="productType">${generateProductTypeOptions(product.productName)}</select></td>
-                    <td><input type="number" class="quantity" placeholder="กรอกจำนวน"></td>
-                    <td><input type="number" class="price" placeholder="กรอกราคา"></td>
-                    <td><button type="button" onclick="removeProductRow(this)">ลบ</button></td>
+                    <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
+                    <td><input type="number" class="price" placeholder="Enter price"></td>
+                    <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
                 `;
             });
         }
@@ -163,9 +165,9 @@
             newRow.innerHTML = `
                 <td><select class="productName">${generateProductOptions()}</select></td>
                 <td><select class="productType"></select></td>
-                <td><input type="number" class="quantity" placeholder="กรอกจำนวน"></td>
-                <td><input type="number" class="price" placeholder="กรอกราคา"></td>
-                <td><button type="button" onclick="removeProductRow(this)">ลบ</button></td>
+                <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
+                <td><input type="number" class="price" placeholder="Enter price"></td>
+                <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
             `;
             const productNameSelect = newRow.querySelector('.productName');
             productNameSelect.addEventListener('change', (event) => updateProductTypeOptions(event.target));
@@ -184,7 +186,7 @@
             row.parentNode.removeChild(row);
         }
 
-        // Generate and download the receipt as PDF with Thai font
+        // Generate and download the receipt as PDF
         async function generateReceipt() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -201,56 +203,62 @@
             doc.addFileToVFS("THSarabun.ttf", base64String);
             doc.setFont("THSarabun");
 
+            // Add content to the PDF (use your form inputs here)
             const receiptId = document.getElementById('receiptId').value;
             const name = document.getElementById('name').value;
             const address = document.getElementById('address').value;
             const date = document.getElementById('date').value;
-            
-            // Add header info
-            doc.setFontSize(16);
-            doc.text('ใบเสร็จ', 105, 20, null, null, 'center');
-            doc.setFontSize(12);
-            doc.text(`หมายเลขใบเสร็จ: ${receiptId}`, 10, 30);
-            doc.text(`วันที่: ${date}`, 10, 35);
-            doc.text(`ลูกค้า: ${name}`, 10, 40);
-            doc.text(`ที่อยู่: ${address}`, 10, 45);
+
+            // Add the receipt content
+            doc.text("ใบเสร็จรับเงิน", 20, 20); // "Receipt" in Thai
+            doc.text("รหัสใบเสร็จ: " + receiptId, 20, 30); // "Receipt ID"
+            doc.text("ชื่อลูกค้า: " + name, 20, 40); // "Customer Name"
+            doc.text("ที่อยู่: " + address, 20, 50); // "Address"
+            doc.text("วันที่: " + date, 20, 60); // "Date"
 
             // Table headers
-            doc.text('ชื่อสินค้า', 10, 55);
-            doc.text('ประเภทสินค้า', 60, 55);
-            doc.text('จำนวน', 120, 55);
-            doc.text('ราคา', 160, 55);
-            
-            let yOffset = 60;
+            doc.text('Product Name', 20, 70);
+            doc.text('Product Type', 60, 70);
+            doc.text('Quantity', 100, 70);
+            doc.text('Price', 140, 70);
+
+            let yOffset = 80;
             let totalAmount = 0;
 
             // Get product details from table
             const rows = document.getElementById('productTable').rows;
             for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                const productName = row.querySelector('.productName').value;
-                const productType = row.querySelector('.productType').value;
-                const quantity = row.querySelector('.quantity').value;
-                const price = row.querySelector('.price').value;
+                const cells = rows[i].cells;
+                const productName = cells[0].querySelector('select').value;
+                const productType = cells[1].querySelector('select').value;
+                const quantity = parseFloat(cells[2].querySelector('input').value);
+                const price = parseFloat(cells[3].querySelector('input').value);
+                
+                const lineTotal = quantity * price;
+                totalAmount += lineTotal;
 
-                const amount = quantity * price;
-                totalAmount += amount;
-
-                doc.text(productName, 10, yOffset);
+                doc.text(productName, 20, yOffset);
                 doc.text(productType, 60, yOffset);
-                doc.text(quantity, 120, yOffset);
-                doc.text(price, 160, yOffset);
+                doc.text(quantity.toString(), 100, yOffset);
+                doc.text(price.toFixed(2), 140, yOffset);
                 yOffset += 10;
             }
 
-            // Add total
-            doc.text(`ยอดรวม: ${totalAmount} บาท`, 10, yOffset);
+            const vat = totalAmount * 0.07;
+            const grandTotal = totalAmount + vat;
 
-            // Save the document
-            doc.save(`receipt_${receiptId}.pdf`);
+            doc.text(`Subtotal: ${totalAmount.toFixed(2)}`, 20, yOffset);
+            yOffset += 10;
+            doc.text(`VAT (7%): ${vat.toFixed(2)}`, 20, yOffset);
+            yOffset += 10;
+            doc.text(`Total: ${grandTotal.toFixed(2)}`, 20, yOffset);
+
+            doc.save(`${receiptId}_receipt.pdf`);
         }
 
-        fetchProductData(); // Initialize data fetching from Google Sheets
+        // Fetch product data when the page loads
+        window.onload = fetchProductData;
     </script>
+
 </body>
 </html>
