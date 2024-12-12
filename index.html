@@ -63,14 +63,14 @@
                 });
         }
 
-        // Populate the product table with the data from the Google Sheet
+        // Populate the product table with dropdowns
         function populateProductTable() {
             const productTable = document.getElementById('productTable');
             productData.forEach(product => {
                 const row = productTable.insertRow();
                 row.innerHTML = `
-                    <td><input type="text" class="productName" value="${product.productName}" readonly></td>
-                    <td><input type="text" class="productType" value="${product.productType}" readonly></td>
+                    <td><select class="productName">${generateProductOptions()}</select></td>
+                    <td><select class="productType">${generateProductTypeOptions(product.productName)}</select></td>
                     <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
                     <td><input type="number" class="price" placeholder="Enter price"></td>
                     <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
@@ -78,17 +78,39 @@
             });
         }
 
+        // Generate product options for the product name dropdown
+        function generateProductOptions() {
+            return productData.map(product => `<option value="${product.productName}">${product.productName}</option>`).join('');
+        }
+
+        // Generate product type options based on selected product name
+        function generateProductTypeOptions(productName) {
+            return productData
+                .filter(product => product.productName === productName)
+                .map(product => `<option value="${product.productType}">${product.productType}</option>`)
+                .join('');
+        }
+
         // Add a new product row to the table
         function addProductRow() {
             const table = document.getElementById('productTable');
             const newRow = table.insertRow();
             newRow.innerHTML = `
-                <td><input type="text" class="productName" placeholder="Enter product name"></td>
-                <td><input type="text" class="productType" placeholder="Enter product type"></td>
+                <td><select class="productName">${generateProductOptions()}</select></td>
+                <td><select class="productType"></select></td>
                 <td><input type="number" class="quantity" placeholder="Enter quantity"></td>
                 <td><input type="number" class="price" placeholder="Enter price"></td>
                 <td><button type="button" onclick="removeProductRow(this)">Remove</button></td>
             `;
+            const productNameSelect = newRow.querySelector('.productName');
+            productNameSelect.addEventListener('change', (event) => updateProductTypeOptions(event.target));
+        }
+
+        // Update product type options when product name is selected
+        function updateProductTypeOptions(selectElement) {
+            const selectedProductName = selectElement.value;
+            const productTypeSelect = selectElement.parentNode.parentNode.querySelector('.productType');
+            productTypeSelect.innerHTML = generateProductTypeOptions(selectedProductName);
         }
 
         // Remove a product row from the table
@@ -129,8 +151,8 @@
             const rows = document.getElementById('productTable').rows;
             for (let i = 1; i < rows.length; i++) {
                 const cells = rows[i].cells;
-                const productName = cells[0].querySelector('input').value;
-                const productType = cells[1].querySelector('input').value;
+                const productName = cells[0].querySelector('select').value;
+                const productType = cells[1].querySelector('select').value;
                 const quantity = parseFloat(cells[2].querySelector('input').value);
                 const price = parseFloat(cells[3].querySelector('input').value);
                 
