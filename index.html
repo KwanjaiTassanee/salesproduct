@@ -189,8 +189,9 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // Load Thai font (e.g., TH Sarabun)
-            doc.addFileToVFS("THSarabun.ttf", "base64 font data here");  // Replace with your base64 font data
+            // Load Thai font (e.g., TH Sarabun) - Replace with your base64 font data
+            const THSarabunBase64 = 'AAEAAA...'; // Paste your base64 string here
+            doc.addFileToVFS("THSarabun.ttf", THSarabunBase64);
             doc.setFont("THSarabun");
 
             const receiptId = document.getElementById('receiptId').value;
