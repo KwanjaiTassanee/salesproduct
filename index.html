@@ -6,7 +6,6 @@
     <title>ตัวสร้างใบเสร็จ</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tabletop@1.6.1/tabletop.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
     <style>
         body {
@@ -185,38 +184,22 @@
             row.parentNode.removeChild(row);
         }
 
-        // Fetch Google Sheet data
-        function fetchGoogleSheetData() {
-            return new Promise((resolve, reject) => {
-                Tabletop.init({
-                    key: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTnN8rh7ph-tin4JHDhL9qdoivNArJTjpWBcdYMwQUP41smPOL172MJ8WSTDt3Q-USbhCgE1zNYDVu-/pub?gid=0&single=true&output=csv',  // Replace with your Google Sheet URL
-                    simpleSheet: true,
-                    callback: function(data) {
-                        resolve(data);
-                    },
-                    error: function(err) {
-                        reject(err);
-                    }
-                });
-            });
-        }
-
         // Generate and download the receipt as PDF with Thai font
         async function generateReceipt() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
-    // Fetch CSV data from Google Sheets
-    const response = await fetch(sheetUrl);
-    const csvText = await response.text();
+            // Fetch CSV data from Google Sheets
+            const response = await fetch(sheetUrl);
+            const csvText = await response.text();
 
-    // Parse the CSV data (you can also use PapaParse for easier handling)
-    const rows = csvText.split('\n');
-    const base64String = rows[0].split(',')[0]; // Assuming the base64 string is in the first cell of the first row
+            // Parse the CSV data (you can also use PapaParse for easier handling)
+            const rows = csvText.split('\n');
+            const base64String = rows[0].split(',')[0]; // Assuming the base64 string is in the first cell of the first row
 
-    // Load Thai font (e.g., TH Sarabun) from base64 string in the CSV
-    doc.addFileToVFS("THSarabun.ttf", base64String);
-    doc.setFont("THSarabun");
+            // Load Thai font (e.g., TH Sarabun) from base64 string in the CSV
+            doc.addFileToVFS("THSarabun.ttf", base64String);
+            doc.setFont("THSarabun");
 
             const receiptId = document.getElementById('receiptId').value;
             const name = document.getElementById('name').value;
@@ -267,7 +250,7 @@
             doc.save(`receipt_${receiptId}.pdf`);
         }
 
-        fetchProductData();
+        fetchProductData(); // Initialize data fetching from Google Sheets
     </script>
 </body>
 </html>
