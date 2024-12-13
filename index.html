@@ -109,6 +109,7 @@
 
     <script>
         let productData = [];  // Store products fetched from Google Sheet
+        let customFontBase64 = '';  // Store custom font base64
 
         // Fetch product data from Google Sheets CSV
         function fetchProductData() {
@@ -123,8 +124,18 @@
                         return { productName, productType };
                     });
                     populateProductTable();
-                    loadCustomFont(rows[0].split(',')[0]); // Load the base64 font
                 });
+        }
+
+        // Fetch base64 font from your GitHub repository
+        function fetchFontBase64() {
+            const fontFileUrl = 'https://raw.githubusercontent.com/KwanjaiTassanee/salesproduct/main/font-base64.txt'; // Raw URL to the font base64 file
+            fetch(fontFileUrl)
+                .then(response => response.text()) // Get the content of the file
+                .then(base64String => {
+                    customFontBase64 = base64String; // Store base64 font data
+                })
+                .catch(error => console.error('Error fetching font base64:', error));
         }
 
         // Populate the product table with dropdowns
@@ -183,15 +194,6 @@
             row.parentNode.removeChild(row);
         }
 
-        // Load custom font (THSarabun) into jsPDF
-        function loadCustomFont(fontBase64) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.addFileToVFS("THSarabun.ttf", fontBase64);
-            doc.setFont("THSarabun");
-            doc.text("Custom font loaded", 10, 20);
-        }
-
         // Generate and download the receipt as PDF
         function generateReceipt() {
             const { jsPDF } = window.jspdf;
@@ -202,6 +204,14 @@
             const address = document.getElementById('address').value;
             const date = document.getElementById('date').value;
             
+            // Load custom font if available
+            if (customFontBase64) {
+                doc.addFileToVFS("THSarabun.ttf", customFontBase64);
+                doc.setFont("THSarabun");
+            } else {
+                doc.setFont("Arial");
+            }
+
             // Add header info
             doc.setFontSize(16);
             doc.text('Receipt', 105, 20, null, null, 'center');
@@ -251,8 +261,11 @@
             doc.save(`${receiptId}_receipt.pdf`);
         }
 
-        // Fetch product data when the page loads
-        window.onload = fetchProductData;
+        // Fetch product data and font when the page loads
+        window.onload = function() {
+            fetchProductData();
+            fetchFontBase64();
+        };
     </script>
 
 </body>
